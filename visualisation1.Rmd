@@ -1,0 +1,303 @@
+---
+title: "Praca_domowa"
+output: html_document
+---
+```{r, echo=FALSE, message=FALSE, warning=FALSE}
+
+library(ggplot2)
+library(data.table)
+library(lubridate)
+library(scales)
+library(RColorBrewer)
+library(ggrepel)
+library(graphics)
+library(ggthemes)
+
+#ZAD.1
+load("pd2.RData")
+p <-ggplot(data=zad1, aes(x=CPI, y=HDI, color=Region)) +
+  geom_point(shape=1, size=4, stroke=1, legend.position="top") +
+  geom_smooth(aes(group=1), method='lm', formula=y~poly(x,2), 
+              se=FALSE, color='red')
+
+countries <- c("Russia", "Venezuela", "Iraq", "Myanmar", "Sudan", "Afghanistan", "Congo", "Greece", "Argentina", "Brazil",
+               "India", "Italy", "China", "South Africa", "Spain","Botswana", "Cape Verde", "Bhutan", "Rwanda", "France",
+               "United States", "Germany", "Britain", "Barbados", "Norway", "Japan", "New Zealand", "Singapore")
+
+p1 <- p + 
+  geom_text_repel(aes(label=Country), color='gray20', data=subset(zad1, Country %in% countries),
+                  check_overlap = TRUE)
+
+
+p2 <- p1 + theme(legend.position = "top", 
+                 legend.title=element_blank(), 
+                 legend.key = element_rect(fill = "transparent", colour = "transparent"),
+                 legend.text = element_text(size=10),
+                 plot.background = element_rect(fill="transparent",colour=NA),
+                 axis.line.x = element_line(),
+                 panel.background = element_rect(fill="transparent",colour=NA),
+                 panel.grid.major = element_line(colour="gray", size=0.5), 
+                 panel.grid.major.x=element_blank()) +
+  guides(colour = guide_legend(nrow = 1))
+
+
+p3 <- p2 + 
+  scale_x_continuous(limits = c(.9, 10.5), breaks=1:10) +
+  scale_y_continuous(limits = c(0.2,1.0), breaks = seq(0.2,1.0,by=0.1)) + 
+  labs(x="Corruption Perceptions Index, 2011 (10=least corrupt)",
+       y="Human Development Index, 2011 (1=Best)",
+       title='Corruption and human development',
+       caption="Sources: Transparency International; UN Human Development Report")
+
+p4 <- p3 + 
+  theme(plot.title = element_text(face = "bold", size = 14),
+        axis.title = element_text(face = "italic")) 
+p4
+
+```
+
+
+```{r, echo=FALSE, message=FALSE, warning=FALSE}
+
+
+#ZAD.2
+
+q <- ggplot(data=zad2, aes(x=as.Date(release), y=adjusted.budget/1000000)) +
+  geom_smooth(linetype="dashed", size=0.4, fill = "slategray1", color="steelblue", method="loess") +
+  geom_point(aes(size=log10(adjusted.gross/adjusted.budget)), color="steelblue") +
+  geom_line(color="steelblue") +
+  geom_text(aes(label=film), size=3, check_overlap = TRUE,  
+            hjust=0.5, vjust=-1, position = "identity")
+q1 <- q + 
+  scale_y_continuous(limits=c(0,260), breaks=seq(0, 200, by=100)) +
+  scale_x_date(breaks = seq(as.Date("1985-01-01"), as.Date("2015-12-31"), by="5 years"), 
+               labels=date_format("%Y")) +
+  scale_size_continuous(labels=c("Flop", "Broke even", "Success", "Commercial hit"))
+q2 <- q1 + 
+  theme_bw() +
+  labs(y="Budget (Milion 2014 US dollars)",
+       x=element_blank(),
+       title=element_blank(),
+       size="Gross/budget") +
+  theme(legend.background = element_rect(fill="transparent"),
+        legend.position=c(.9,.8),
+        legend.title=element_text(face="bold", size=10),
+        legend.key = element_rect(colour = "gray"))
+q2
+
+```
+
+```{r, echo=FALSE, message=FALSE, warning=FALSE}
+
+#ZAD.4
+###
+d <- data.frame(okres=c(1L,2L,3L,4L,5L,6L,7L,8L,9L,10L,11L,12L),
+                przychody=c(6829,7508,9283,8725,3227,4902,3416,3039,825,7458,2215,4443),
+                koszty=c(-4123,-5659,-6986,-5682,-2452,-2485,-2095,-2103,-616,-6526,-1542,-3151))
+
+d$okres <- factor(d$okres,levels=1:12, labels=c('styczeń', 'luty', 'marzec', 'kwiecień', 'maj', 'czerwiec',
+                                                'lipiec', 'sierpień', 'wrzesień', 'październik', 'listopad', 'grudzień'))
+d$zysk <- d$przychody + d$koszty
+d$marża <- round(d$zysk/d$przychody,4)
+
+r <- ggplot(data=d, aes(x=okres)) +
+  geom_bar(aes(y=przychody, fill="przychody"), stat='identity', width=0.8) +
+  geom_bar(aes(y=koszty, fill="koszty"), stat='identity', width=0.8) +
+  geom_point(aes(y=zysk, shape= "1")) +
+  geom_text(aes(y=zysk, label=zysk), size=3, hjust=0.5, vjust=-1) +
+  geom_text(aes(y=przychody, label=przychody), size=3, vjust=-1) +
+  geom_text(aes(y=koszty, label=koszty), size=3, vjust=1) 
+
+r1 <- r + 
+  scale_y_continuous(limits=c(-7500,10030), breaks=seq(-7500,10000, by=2500), 
+                     labels = format(seq(-7500,10000, by=2500),big.mark=" ")) +
+  scale_shape_discrete(labels=c("Zysk")) +
+  scale_fill_manual(labels=c("Przychody", "Koszty"), values=c("#FFEDA0", "#FEB24C")) +
+  guides(fill = guide_legend(reverse=TRUE))
+
+r2 <- r1 +
+  labs(y="Przepływy finansowe",
+       x=element_blank(),
+       title="Wykres 1. Przychody i koszty w 2012 r.") +
+  theme_minimal() +
+  theme(axis.text.x=element_text(angle=45, hjust=1),
+        axis.ticks=element_line(colour="black"),
+        legend.title=element_blank(),
+        legend.position="bottom",
+        legend.key = element_rect(colour = "gray"),
+        plot.title=element_text(face="bold", size=12),
+        panel.background=element_rect(colour="gray")) 
+r2
+
+```
+
+```{r, echo=FALSE, message=FALSE, warning=FALSE}
+#ZAD.5
+d <- data.frame(klm=c(1L,2L,3L,4L,5L,6L),
+                sr_wyd=c(1827,1444,1400,1285,1183,1039),
+                med_wyd=c(1500,1244,1168,1110,1002,863))
+
+d$klm <- factor(d$klm, labels=c(">=500 tys.","200-499 tys.", "100-199 tys.","20-99 tys.","<20 tys.","wieś"))
+
+s <- ggplot(data=d, aes(x=klm)) +
+  geom_bar(aes(y=sr_wyd, fill="sr_wyd"), color= 'black', stat='identity') +
+  geom_bar(aes(y=med_wyd, fill="med_wyd"), color='black', width=0.5, stat='identity') +
+  geom_text(aes(y=sr_wyd, label=sr_wyd),size=3.5, hjust=0.5, vjust=-1) +
+  geom_text(aes(y=med_wyd, label=med_wyd), size=3.5, hjust=0.5, vjust=-1, colour="white")
+
+
+s1 <- s +
+  scale_y_continuous(limits=c(0,2000), breaks=seq(0,2000, by=500), expand = c(0, 0)) +
+  scale_x_discrete(expand = c(0,0.6)) +
+  scale_fill_manual(labels=c("Mediana","Średnia"),
+                    values=c("lawngreen","darkgreen"))
+
+s2 <- s1 +
+  labs(y="Wydatki [zł]",
+       x=element_blank(),
+       title="Średnie i mediany dochodów a klasa miejscowości") +
+  theme(panel.background = element_rect(fill="white"),
+        panel.grid.major.x  = element_line(colour = "gray", size=0.2),
+        panel.grid.minor.x = element_line(colour = "gray", size=0.2),
+        panel.grid.major.y  = element_line(colour = "gray", size=0.2),
+        panel.grid.minor.y = element_line(colour = "gray", size=0.2),
+    plot.title = element_text(size=16),
+        legend.position="bottom",
+    legend.title = element_blank(),
+        axis.text=element_text(colour='black'),
+    axis.ticks=element_blank())
+s2
+
+```
+
+
+```{r, echo=FALSE, message=FALSE, warning=FALSE}
+
+#ZAD.6
+###
+d <- data.frame(klm=c(1L,2L,3L,4L,5L,6L),
+                rok=c(rep(2010,6),rep(2014,6)),
+                sr_wyd=c(c(1827,1444,1400,1285,1183,1039)-166,c(1827,1444,1400,1285,1183,1039)),
+                med_wyd=c(c(1500,1244,1168,1110,1002,863)-187,c(1500,1244,1168,1110,1002,863)-44))
+d
+
+d$klm <- factor(d$klm, levels=1:6, labels=c(">=500 tys.", "200-499 tys.", "100-199 tys.", "20-99 tys.", "<20 tys.", "wieś"))
+
+d$rok <- factor(d$rok,levels=c(2010,2014))
+###
+t <- ggplot(data=d, aes(x=klm)) +
+  geom_bar(aes(y=sr_wyd, fill=rok), stat="identity", position = "dodge", colour="black") +
+  geom_bar(aes(y=med_wyd, fill=rok), stat="identity", position = "dodge", colour="black", width = 0.4) +
+  geom_text(aes(y=sr_wyd, label=sr_wyd),size=3.5, hjust=0, vjust=-1) +
+  geom_text(aes(y=med_wyd, label=med_wyd), size=3.5, hjust=0, vjust=-1, colour="white")
+
+t1 <- t +
+  scale_x_discrete(expand = c(0, 0.6)) +
+  scale_y_continuous(expand = c(0, 0), limits=c(0, 2000), breaks=seq(0, 2000, by=500)) #+
+  scale_fill_manual(values = c("darkblue", "red", "blue", "orange"))
+
+t2 <- t1 +
+  theme_minimal()+
+  labs(y="Wydatki [zł]",
+       x=element_blank(),
+       title="Średnie i mediany wydatków w miejscowościach o danej klasie") +
+  theme(panel.background = element_rect(colour="black"),
+    axis.text = element_text(color = "black", size=10),
+    legend.position = "bottom")
+t2
+
+```
+
+```{r, echo=FALSE, message=FALSE, warning=FALSE}
+
+#ZAD.7
+###
+d <- data.frame(okres=c(1L,2L,3L,4L,5L,6L,7L,8L,9L,10L,11L,12L),
+                przychody=c(6829,7508,9283,8725,3227,4902,3416,3039,825,7458,2215,4443),
+                koszty=c(-4123,-5659,-6986,-5682,-2452,-2485,-2095,-2103,-616,-6526,-1542,-3151))
+
+d$okres <- factor(d$okres,levels=1:12, labels=c('styczeń', 'luty', 'marzec', 'kwiecień', 'maj', 'czerwiec',
+                                                'lipiec', 'sierpień', 'wrzesień', 'październik', 'listopad', 'grudzień'))
+d$zysk <- d$przychody + d$koszty
+d$marża <- round(d$zysk/d$przychody,4)
+###
+
+u <- ggplot(data=d, aes(x=okres)) + 
+  geom_bar(aes(y=przychody+koszty), width=0.7, fill='#FFEDA0', stat='identity') +
+  geom_point(aes(y=marża*6000),color='red', stat="identity") +
+  geom_line(aes(y=marża*6000, group=1), color='red', stat="identity", size=1) +
+  geom_text(aes(y=marża*6000, label=paste0(format(marża*100, nsmall=2),"%")), vjust=-1, size=3) + 
+  geom_text(aes(y=przychody+koszty, label=przychody+koszty),size=3, hjust=0.5, vjust=-0.5) +
+  scale_x_discrete(expand = c(0, 0.6)) +
+  scale_y_continuous(limits=c(0,3200), breaks=seq(0,3000, by=1000), expand = c(0, 0), 
+                    sec.axis = sec_axis(~ ./6000, breaks = seq(0,0.5,by=.1), 
+                    labels = paste0(format(seq(0,0.5,by=0.1)*100),"%")))
+
+u1 <- u +
+  theme_light() +
+  labs(y="Cashflow",
+       x="okres",
+       title=element_blank()) +
+  theme(panel.background=element_rect(color='black'),
+        axis.title.x = element_text(size=9),
+        axis.title.y.right = element_text(size=10),
+        axis.ticks=element_line(colour="black"))
+u1
+
+```
+
+
+```{r, echo=FALSE, message=FALSE, warning=FALSE}
+
+#ZAD.8
+
+library(tidyverse)
+library(readxl)
+
+library(readxl)
+a <- read_excel("~/Desktop/STUDIA/SEMESTR 4/R - wizualizacja/Praca domowa - ggplot2-20170414/country_metrics_2003 (1).xlsx")
+
+
+labels <- c("Cuba","Niger","Sierra Leone","Gambia","Botswana","South Africa","Tajikistan","Lebanon","Mali",
+            "Saudi Arabia","Costa Rica","Slovenia","Portugal","Russia","Ireland","Spain","New Zealand",
+            "United Kingdom","Sweden","Estonia","Australia","Kuwait","Finland","Canada","USA","United Arab Emirates") 
+
+ggplot(data=a, aes(x=as.numeric(HDI), y=as.numeric(EFPC))) +
+  geom_point() +
+  scale_x_continuous(name = "UN Human Development Index, 2003", 
+                     breaks= seq(0.2,1, by=0.2), limits = c(0.2,1)) +
+  scale_y_continuous(name="Ecological footprint per capita", 
+                     breaks=seq(0,12, by=2), limits=c(0,12)) +
+  theme(panel.background = element_blank(),
+        panel.border = element_rect(color="black", fill=NA)) +
+  geom_vline(xintercept = 0.8, color = "blue", size=1) +
+  geom_hline(yintercept = 1.82, color = "darkgreen", size=1) +
+  geom_text(data=subset(a,`Country Name` %in% labels), 
+            aes(label=`Country Name`), size=3, check_overlap = TRUE,vjust=0.5,hjust=-0.1) +
+  geom_point(data=subset(a, a$`Country Name`=="Cuba"), color="red") +
+  geom_text(data=subset(a,a$`Country Name`=="Niger"),aes(label = 'Word biocapacity available per                person'),size=2.5,hjust=0.45, vjust=-1.8) +
+  geom_text(data=subset(a,a$`Country Name`=="Australia"),aes(label = 'Treshold for high human development'), size=2.5,hjust=0.8, vjust=-10.5, angle=90)
+
+```
+
+```{r, echo=FALSE, message=FALSE, warning=FALSE}
+#ZAD.10
+dane <- read.csv("ew3", sep = ";")
+
+a <- ggplot(data=dane, aes(x=pkb, y=unemployment)) +
+  geom_point(shape=2, size=3) +
+  scale_x_continuous(limits=c(-8, 12), breaks=seq(-8, 12, by=2), 
+                     labels=paste0(format(seq(-0.08, 0.12, by=0.02)*100, decimal.mark = ","), "%")) +
+  scale_y_continuous(limits=c(-6, 6), breaks=seq(-6, 6, by=2),
+                     labels=paste0(format(seq(-0.06, 0.06, by=0.02)*100, decimal.mark = ","), "%")) +
+  geom_smooth(method = "lm", se=FALSE, color="darkblue", size=0.5) +
+  theme_bw( ) +
+  labs(title="Okun's law for Australia: annual change in GDP and Unemployment Rate",
+       x="Change in GDP since 1979",
+       y="Change in Unemployment Rate",
+       caption="Based on data from World Bank") +
+  theme(panel.grid.minor=element_line(color="white"),
+        axis.title = element_text(face = "italic")) 
+a
+
+```
